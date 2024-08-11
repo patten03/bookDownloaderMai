@@ -31,24 +31,29 @@ def fakeDirection(session: requests.Session):
         "http://elibrary.mai.ru/MegaPro/Download/ToView/67065?idb=NewMAI2014",
     ]
 
-    session.get(spareBooks[random.randint(0, len(spareBooks) - 1)],headers=headers, timeout=9000, allow_redirects=True)
+    session.get(spareBooks[random.randint(0, len(spareBooks) - 1)], headers=headers, timeout=9000, allow_redirects=True)
 
-# format user input
+# format user input, changes all input to a such format https://elibrary.mai.ru/ProtectedView/Book/ViewBook/*****
 def inputBookLink() -> str:
     done = False
+    # endless input, while we don't get right information
     while done == False:
         try:
             url = input("Введите ссылку на книгу или ее номер из elibrary.mai.ru: ")
 
             correctLink = "https://elibrary.mai.ru/ProtectedView/Book/ViewBook/"
+            # changes url in order to not to get redirect (otherwise we can't download book with authorization requirements)
             if(url.rfind("idb=NewMAI2014") != -1):
                 url = url.replace('?idb=NewMAI2014', '')
                 url = url.replace('http://elibrary.mai.ru/MegaPro/Download/ToView/', '')
                 url = correctLink + url
+            # changes given number to url
             elif(url.isnumeric() and url != ""):
                 url = correctLink + url
+            # pass clear input
             elif(url.rfind("ProtectedView/Book/ViewBook/") != -1):
                 pass
+            # if we can't change format, throw exception
             else:
                 raise Exception("Book does not exist or incorrect input")
             done = True
@@ -65,6 +70,14 @@ def firstEnter(session: requests.Session, url: str) -> tuple[BeautifulSoup, requ
 
     return soup, response
 
+# check existence of book
+def doesExist(soup: BeautifulSoup) -> bool:
+    data = soup.find(["h2"], string = "Не могу найти запись в базе данных")
+    if data == None:
+        return True
+    else:
+        return False
+
 # get count of pages in html
 def getPageCount(soup: BeautifulSoup) -> int:
     pageCount = soup.find("span", id="bmkpagetotalnum")
@@ -80,7 +93,7 @@ def getRefToPageImage(soup: BeautifulSoup, domain: str) -> str:
     return domain + imageSubRef
 
 # download image to specific folder with numerated name
-def downloadImage(imageUrl: str, pageNum: int, session: requests.Session, folder: str):
+def downloadImage(imageUrl: str, pageNum: int, donwloadingSession: requests.Session, folder: str):
     numLen = 5
     filename = str(pageNum).zfill(numLen)                # add name to file
     filename = filename + imageUrl[imageUrl.rfind("."):] # get and add extension to file
@@ -88,10 +101,15 @@ def downloadImage(imageUrl: str, pageNum: int, session: requests.Session, folder
     fullpath = "./" + folder + "/" + filename            # make path to save image
 
     # download image
-    with open(fullpath, "wb") as f:
-        response = session.get(imageUrl, headers=headers, allow_redirects=True)
-        # exceptional situation which I found on 2134's book
-        f.write(response.content)
+    response = donwloadingSession.get(imageUrl, allow_redirects=True)
+    # in case if something goes wrong
+    if (response.status_code == 304):
+        print(f"Не удалось скачать страницу, поробуйте скачать ее вручную {imageUrl}")
+    else:
+        with open(fullpath, "wb") as f:
+            f.write(response.content)
+            print(f"Страница {pageNum} скачана")
+        
 
 # process of downloading page with last redirected link and count of pages
 def downloadBook(session: requests.Session, url: str, pageCount: int):
@@ -102,25 +120,34 @@ def downloadBook(session: requests.Session, url: str, pageCount: int):
     #define domain
     domain = url.split("/")[0] + "//" + url.split("/")[2]
 
-    # download all pages
-    for page in range(1, pageCount + 1):
-        urlWithImage = url + f"?page={page}&pps=1"
+    # print count of pages
+    print(f"Книга содержит {pageCount} страниц")
 
+    # download all pages
+    downloadingSession = requests.Session()
+    for page in range(1, pageCount + 1):
         # get soup of page
-        response = session.get(urlWithImage, headers = headers)
+        urlParam = {"page": page, "pps": 1}
+        response = session.get(url, headers = headers, params = urlParam)
         soup = BeautifulSoup(response.text, "html.parser")
 
+        # download page
         imageUlr = getRefToPageImage(soup, domain)
-        downloadImage(imageUlr, page, session, folder)
-        print(f"{page} из {pageCount} страниц скачано")
+        downloadImage(imageUlr, page, downloadingSession, folder)
+    
+    print("Все страницы загруженны")
+
     
 def main():
     session = requests.Session()
     fakeDirection(session)
     url = inputBookLink()
     soup, response = firstEnter(session, url)
-    pageCount = getPageCount(soup)
-    downloadBook(session, response.url, pageCount)
+    if(doesExist(soup)):
+        pageCount = getPageCount(soup)
+        downloadBook(session, response.url, pageCount)
+    else:
+        print("Книга не найдена")
     
 
 if __name__ == "__main__":
