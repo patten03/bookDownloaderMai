@@ -29,6 +29,14 @@ def fakeDirection(session: requests.Session):
         "http://elibrary.mai.ru/MegaPro/Download/ToView/68696?idb=NewMAI2014",
         "http://elibrary.mai.ru/MegaPro/Download/ToView/71003?idb=NewMAI2014",
         "http://elibrary.mai.ru/MegaPro/Download/ToView/67065?idb=NewMAI2014",
+        "http://elibrary.mai.ru/MegaPro/Download/ToView/66949?idb=NewMAI2014",
+        "http://elibrary.mai.ru/MegaPro/Download/ToView/67646?idb=NewMAI2014",
+        "http://elibrary.mai.ru/MegaPro/Download/ToView/69820?idb=NewMAI2014",
+        "http://elibrary.mai.ru/MegaPro/Download/ToView/71722?idb=NewMAI2014",
+        "http://elibrary.mai.ru/MegaPro/Download/ToView/68696?idb=NewMAI2014",
+        "http://elibrary.mai.ru/MegaPro/Download/ToView/67580?idb=NewMAI2014",
+        "http://elibrary.mai.ru/MegaPro/Download/ToView/65147?idb=NewMAI2014",
+
     ]
 
     session.get(spareBooks[random.randint(0, len(spareBooks) - 1)], headers=headers, timeout=9000, allow_redirects=True)
