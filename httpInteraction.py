@@ -72,7 +72,7 @@ def firstEnter(session: requests.Session, url: str) -> tuple[BeautifulSoup, requ
 
 # check existence of book
 def doesExist(soup: BeautifulSoup) -> bool:
-    data = soup.find(["h2"], string = "Не могу найти запись в базе данных")
+    data = soup.find(["h2"], string = ["Не могу найти запись в базе данных", "Неправильный формат записи!"])
     if data == None:
         return True
     else:
