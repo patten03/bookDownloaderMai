@@ -114,15 +114,16 @@ def downloadImage(imageUrl: str, pageNum: int, donwloadingSession: requests.Sess
 # process of downloading page with last redirected link and count of pages
 # return folder where all images were made
 def downloadPages(session: requests.Session, url: str, pageCount: int) -> str:
+    # print count of pages
+    print(f"Книга содержит {pageCount} страниц")
+    
     # make folder
     folder = url[url.rfind('/') + 1:]
     Path("./" + folder).mkdir(parents = True, exist_ok = True)
+    print(f"Создание временной папки под названием \"{folder}\" для сохранения страниц")
 
     #define domain
     domain = url.split("/")[0] + "//" + url.split("/")[2]
-
-    # print count of pages
-    print(f"Книга содержит {pageCount} страниц")
 
     # download all pages
     downloadingSession = requests.Session()
@@ -141,17 +142,25 @@ def downloadPages(session: requests.Session, url: str, pageCount: int) -> str:
 # main function of downloading books, responsible for getting from user url to book and downloading its pages
 # return folder where all downloaded pages are saved, if something goes wrong it returns None
 def downloadBook() -> str:
-    session = requests.Session()              # make session to bypass authorization
-    fakeDirection(session)                    # actual bypassing authorization
-    url = inputBookLink()                     # getting url from user
-    soup, response = firstEnter(session, url) # getting first site page with information like count of pages or non-existence of book
+    session = requests.Session()     # make session to bypass authorization
+    fakeDirection(session)           # actual bypassing authorization
+
+    # loop until we get existing book
+    folder = None
+    found = False
+    while (not(found)):
+        url = inputBookLink()                     # getting url from user
+        soup, response = firstEnter(session, url) # getting first site page with information like count of pages or non-existence of book
+
+        # check existence of book
+        if(doesExist(soup)):
+            pageCount = getPageCount(soup)
+            folder = downloadPages(session, response.url, pageCount)
+            print("Все страницы загруженны")
+            found = True
+            
+        else:
+            print("Книга не найдена")
+            found = False
     
-    # check existence of book
-    if(doesExist(soup)):
-        pageCount = getPageCount(soup)
-        folder = downloadPages(session, response.url, pageCount)
-        print("Все страницы загруженны")
-        return folder
-    else:
-        print("Книга не найдена")
-        return None
+    return folder
