@@ -7,6 +7,10 @@ def main():
     
     # make bind pages as pdf file
     pm.makePdfBook(folder)
+    
+    # prevent closing program
+    print("Скачивание завершено, для закрытия программы нажмите Enter...")
+    input()
 
 if __name__ == "__main__":
     main()
