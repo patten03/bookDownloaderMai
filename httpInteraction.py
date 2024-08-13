@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 import random
+import sys
 
 headers = {
     'authority': 'www.nytimes.com',
@@ -65,6 +66,9 @@ def inputBookLink() -> str:
             else:
                 raise Exception("Book does not exist or incorrect input")
             done = True
+        # if user decided quit using ctrl+C
+        except KeyboardInterrupt:
+            sys.exit()
         except:
             print("Некорректный ввод, попробуйте ввести другую ссылку на книгу")
     
@@ -80,11 +84,19 @@ def firstEnter(session: requests.Session, url: str) -> tuple[BeautifulSoup, requ
 
 # check existence of book
 def doesExist(soup: BeautifulSoup) -> bool:
-    data = soup.find(["h2"], string = ["Не могу найти запись в базе данных", "Неправильный формат записи!"])
-    if data == None:
+    # data = soup.find(["h2"], string = ["Не могу найти запись в базе данных", "Неправильный формат записи!"])
+    # if data == None:
+    #     return True
+    # else:
+    #     return False
+
+    # I've made a strange, but working solution
+    try:
+        getPageCount(soup)
         return True
-    else:
+    except:
         return False
+
 
 # get count of pages in html
 def getPageCount(soup: BeautifulSoup) -> int:
