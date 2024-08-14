@@ -181,6 +181,7 @@ def downloadBook() -> str:
             
         else:
             print("Книга не найдена")
+            fakeDirection(session)
             found = False
     
     return folder
