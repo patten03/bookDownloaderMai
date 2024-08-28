@@ -1,4 +1,4 @@
-# BookStealerMai
+# BookDownloaderMai
 
 ## Requirements
 
